@@ -265,6 +265,8 @@ select{font:700 13.5px var(--body);padding:8px 12px;border-radius:999px;border:1
 .shot>img{width:100%;height:100%;object-fit:cover;display:block;transition:opacity .25s ease}
 .shot .cov{position:absolute;left:10px;bottom:-18px;width:54px;height:72px;border-radius:7px;overflow:hidden;border:2px solid var(--surface);box-shadow:0 4px 10px rgba(0,0,0,.25);background:var(--surface-2)}
 .shot .cov img{width:100%;height:100%;object-fit:cover;display:block}
+.shot .blurbg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(18px) brightness(.65) saturate(1.2);transform:scale(1.25)}
+.shot .covfit{position:relative;display:block;height:88%;width:auto;max-width:90%;margin:4% auto 0;object-fit:contain;border-radius:6px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
 .shot .ph{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:44px;color:var(--muted)}
 .shot .nshots{position:absolute;right:8px;top:8px;background:rgba(0,0,0,.55);color:#fff;font-size:11.5px;font-weight:800;border-radius:999px;padding:2px 8px}
 .shot .why{position:absolute;right:8px;bottom:8px;background:var(--sun);color:#3A2B00;font-size:12px;font-weight:800;border-radius:999px;padding:3px 9px;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -562,7 +564,7 @@ const T={
   quick:[['🍼','Fino a 3 anni',{kidage:3}],['⭐','Voto 5',{rating:5}],['🟢','Quasi da solo',{help:['1']}],['🦸','Supereroi',{theme:['hero']}],['🧱','LEGO',{theme:['lego']}],['🕹️','Classici retro',{era:['retro']}],['💻','PC',{console:['pc']}],['👨‍👩‍👧','In 3 o più',{players:3}],['💶','Sotto i 20 €',{price:20}]],
   aboutT:'ℹ️ Come funziona l\'app e da dove vengono i dati',
   about:[['🧩 Quiz','Rispondi a 7 domande: i giochi consigliati restano nella scheda "Per voi".'],['🤝 Aiuto dell\'adulto','Quasi da solo, si gioca insieme, oppure l\'adulto guida e il bambino partecipa.'],['●●● Facilità','Quanto è semplice il ruolo del bambino: tre pallini vuol dire facilissimo.'],['🔍 Ricerca','Titoli, personaggi (anche in inglese) o parole come "macchine" e "dinosauri". Tasto / per cercare.'],['📵 Niente online','Nessun gioco richiede internet o abbonamenti: si gioca nella stessa stanza, sullo stesso schermo.'],['💻 PC','Solo giochi che Steam indica per più giocatori sullo stesso schermo. Servono dei controller.'],['🕹️ Retro','Si giocano sulla console originale; alcuni anche nei Classic Mini.'],['⏱️ Durata','Ore della sola storia principale, indicative: con i piccoli ci si mette di più.'],['💶 Prezzi','eShop, Steam e negozi online italiani (DekuDeals); usato europeo (PriceCharting).'],['📷 Immagini','Foto da Nintendo, Steam e Wikipedia. Marchi e immagini dei rispettivi proprietari.'],['💾 I tuoi dati','Salvati e provati restano solo su questo dispositivo.']],
-  share:'Per condividere l\'app basta mandare questo file.',
+  share:'Per condividerla basta mandare il link, oppure il file dell\'app.',
   updated:d=>`Aggiornato al ${d}`,close:'Chiudi',prev:'Foto precedente',next:'Foto successiva'},
  en:{app:'Play Together',h1:'Video games to play <span>together</span> with little ones',
   lede:n=>`${n} co-op games picked for young kids, each with a recommended age, from Switch, PlayStation and PC to retro classics. Search for a character or tap a game to see gameplay photos straight away.`,
@@ -616,7 +618,7 @@ const T={
   quick:[['🍼','Up to age 3',{kidage:3}],['⭐','5 stars',{rating:5}],['🟢','Almost solo',{help:['1']}],['🦸','Superheroes',{theme:['hero']}],['🧱','LEGO',{theme:['lego']}],['🕹️','Retro classics',{era:['retro']}],['💻','PC',{console:['pc']}],['👨‍👩‍👧','3 or more',{players:3}],['💶','Under €20',{price:20}]],
   aboutT:'ℹ️ How the app works and where the data comes from',
   about:[['🧩 Quiz','Answer 7 questions: the suggested games stay in the "For you" tab.'],['🤝 Adult help','Almost solo, side by side, or the adult leads and the child joins in.'],['●●● Ease','How simple the child\'s role is: three dots means very easy.'],['🔍 Search','Titles, characters (Italian or English names) or words like "cars" and "dinosaurs". Press / to search.'],['📵 No online','No game needs internet or a subscription: everyone plays in the same room, on the same screen.'],['💻 PC','Only games Steam lists for several players on one screen. You need controllers.'],['🕹️ Retro','Played on the original console; some also on the Classic Minis.'],['⏱️ Length','Main-story hours, approximate: it takes longer with little ones.'],['💶 Prices','eShop, Steam and Italian online stores (DekuDeals); European used prices (PriceCharting).'],['📷 Images','Photos from Nintendo, Steam and Wikipedia. Trademarks and images belong to their owners.'],['💾 Your data','Saved and played lists stay on this device only.']],
-  share:'To share the app, just send this file.',
+  share:'To share it, just send the link or the app file.',
   updated:d=>`Updated ${d}`,close:'Close',prev:'Previous photo',next:'Next photo'}
 };
 const VIOL={'Nessuna':'none','Cartoon':'cartoon','Lieve':'mild'};
@@ -919,14 +921,15 @@ function card(g){
   const im=IMGS[g.id]||{}, sv=savedSet().has(g.id), tr=triedSet().has(g.id);
   const info=SCORES&&SCORES.get(g.id);
   const whyChar=S.char||(info&&info.why);
-  const hero=im.s&&im.s[0]?`<img src="${im.s[0]}" alt="" loading="lazy" decoding="async">`:(im.c?`<img src="${im.c}" alt="" loading="lazy" style="filter:blur(14px) saturate(1.2);transform:scale(1.2)">`:`<span class="ph">${esc(title(g)[0])}</span>`);
+  // senza foto di gameplay: copertina intera centrata su uno sfondo sfumato della copertina stessa
+  const hero=im.s&&im.s[0]?`<img src="${im.s[0]}" alt="" loading="lazy" decoding="async">`:(im.c?`<img class="blurbg" src="${im.c}" alt="" loading="lazy"><img class="covfit" src="${im.c}" alt="" loading="lazy">`:`<span class="ph">${esc(title(g)[0])}</span>`);
   const desc=S.lang==='en'?g.k_en:g.k;
   return `<button type="button" class="card" data-id="${g.id}" aria-label="${esc(title(g))}">
     <div class="shot">${hero}
       ${im.s&&im.s.length>1?`<span class="nshots">📷 ${im.s.length}</span>`:''}
       ${whyChar?`<span class="why">${esc(L.withChar(charName(whyChar)))}</span>`:''}
       <div class="flags">${sv?'<span class="flag saved">♥</span>':''}${tr?'<span class="flag tried">✓</span>':''}</div>
-      ${im.c?`<div class="cov"><img src="${im.c}" alt="" loading="lazy"></div>`:''}
+      ${im.c&&im.s&&im.s.length?`<div class="cov"><img src="${im.c}" alt="" loading="lazy"></div>`:''}
     </div>
     <div class="cbody">
       <h2>${hl(title(g))}</h2>
