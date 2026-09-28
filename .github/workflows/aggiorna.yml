@@ -1,11 +1,12 @@
 # Robot di Giochiamo insieme (gratis su GitHub):
-# - ogni lunedì mattina aggiorna i prezzi (prices.json) leggendo DekuDeals, Steam e PriceCharting;
+# - ogni 6 ore cerca su Steam i giochi co-op nuovi e ben recensiti e li aggiunge (auto.json);
+# - ogni 6 ore aggiorna i prezzi (prices.json) leggendo DekuDeals, Steam e PriceCharting;
 # - quando si caricano nuovi pacchetti di foto (cartella pacchetti/), li scompatta in media/.
 # Il sito si aggiorna da solo dopo ogni modifica. Si può anche avviare a mano da "Actions" → "Aggiorna" → "Run workflow".
 name: Aggiorna
 on:
   schedule:
-    - cron: '17 4 * * 1'
+    - cron: '23 */6 * * *'
   workflow_dispatch:
   push:
     branches: [main]
@@ -26,6 +27,8 @@ jobs:
           if ls pacchetti/*.zip >/dev/null 2>&1; then
             for z in pacchetti/*.zip; do unzip -o -q "$z" -d .; done
           fi
+      - name: Giochi nuovi da Steam
+        run: python3 strumenti/scopri_giochi.py . || echo "scoperta non riuscita, riprovo al prossimo giro"
       - name: Prezzi
         run: python3 strumenti/aggiorna_prezzi.py .
       - name: Salva
@@ -33,8 +36,9 @@ jobs:
           git config user.name "robot-prezzi"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A media prices.json
+          if [ -f auto.json ]; then git add auto.json; fi
           if git diff --cached --quiet; then echo "Niente da aggiornare"; exit 0; fi
-          git commit -m "Aggiornamento automatico: prezzi e foto"
+          git commit -m "Aggiornamento automatico: giochi nuovi, prezzi e foto"
           git push
       - name: Ripubblica il sito
         env:
