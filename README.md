@@ -18,8 +18,14 @@ Catalogo gratuito di videogiochi **co-op sullo stesso schermo**, senza online: d
 
 ## Sempre aggiornata
 
-- **Prezzi:** ogni lunedì un robot gratuito di GitHub rilegge eShop, Steam, DekuDeals e PriceCharting e aggiorna i prezzi.
-- **Giochi nuovi:** quando la libreria cresce, il sito si aggiorna; anche il file offline e il programma per Windows scaricano da soli i giochi nuovi quando c'è internet.
+- **Prezzi:** ogni 6 ore un robot gratuito di GitHub rilegge eShop, Steam, DekuDeals e PriceCharting e aggiorna i prezzi.
+- **Giochi nuovi in automatico:** ogni 6 ore lo stesso robot cerca su Steam i giochi co-op nuovi e li aggiunge da solo, solo se:
+  - Steam indica il gioco sullo stesso schermo e gli utenti lo etichettano "Local Co-Op" o "Split Screen";
+  - le recensioni sono molto positive (almeno 85% su 500, oppure 90% su 150 per le uscite recenti);
+  - non è un gioco soprattutto competitivo, per adulti o che richiede telefono o internet.
+
+  Queste schede sono segnate "Aggiunto in automatico". Senza PEGI ufficiale non compaiono tra i giochi per bambini.
+- **Copie già scaricate:** il file offline e il programma per Windows scaricano da soli giochi e prezzi nuovi quando c'è internet.
 
 ## Come usarla
 
