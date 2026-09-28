@@ -6,6 +6,9 @@ ROOT = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.
 H = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36',
      'Accept-Language': 'it-IT,it;q=0.9,en;q=0.8'}
 SRC = json.load(open(os.path.join(ROOT, 'strumenti', 'fonti_prezzi.json'), encoding='utf-8'))
+AJ = os.path.join(ROOT, 'auto.json')   # i giochi aggiunti in automatico da Steam
+if os.path.exists(AJ):
+    for g in json.load(open(AJ, encoding='utf-8')).get('games', []): SRC.setdefault(g['id'], {'steam': g['appid']})
 PJ = os.path.join(ROOT, 'prices.json')
 old = json.load(open(PJ, encoding='utf-8')) if os.path.exists(PJ) else {'p': {}}
 
