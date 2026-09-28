@@ -10,7 +10,8 @@ Età, violenza e genere arrivano dai dati di Steam (PEGI e descrittori): per pru
 Le schede create così sono segnate "aggiunto in automatico" nell'app."""
 import json, os, re, sys, time, html, datetime, unicodedata, urllib.request, urllib.parse
 ROOT = sys.argv[1] if len(sys.argv) > 1 else os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MAX_NEW = int(os.environ.get('MAX_NUOVI', '40'))
+MAX_NEW = int(os.environ.get('MAX_NUOVI', '400'))
+DRY = os.environ.get('PROVA') == '1'   # PROVA=1: mostra cosa aggiungerebbe senza salvare
 H = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126 Safari/537.36',
      'Accept-Language': 'it-IT,it;q=0.9,en;q=0.8'}
 def get(u, tries=3):
@@ -44,17 +45,27 @@ def already(name):
 
 # 1) candidati: i più apprezzati e i più recenti con co-op sullo stesso schermo
 cand = {}
-for sort, pages in (('Reviews_DESC', 8), ('Released_DESC', 3)):
+# 39 = co-op sullo stesso schermo; 24 = schermo condiviso/diviso (alcuni sviluppatori segnano solo questo: le etichette degli utenti fanno il resto)
+for cat, sort, pages in ((39, 'Reviews_DESC', 200), (24, 'Reviews_DESC', 200), (39, 'Released_DESC', 3)):
+    empty = 0
     for p in range(pages):
-        r = get('https://store.steampowered.com/search/results/?query&start=%d&count=100&category3=39&category1=998&sort_by=%s&infinite=1&cc=it&l=english' % (p * 100, sort))
+        r = get('https://store.steampowered.com/search/results/?query&start=%d&count=100&category3=%d&category1=998&sort_by=%s&infinite=1&cc=it&l=english' % (p * 100, cat, sort))
         try: h = json.loads(r)['results_html']
-        except Exception: continue
+        except Exception: break
+        if 'search_result_row' not in h: break
+        big = 0
         for row in re.split(r'<a href="https://store.steampowered.com/app/', h)[1:]:
-            aid = int(row.split('/')[0])
+            try: aid = int(row.split('/')[0])
+            except ValueError: continue
             t = re.search(r'<span class="title">(.*?)</span>', row)
             rv = re.search(r'(\d+)% of the ([\d,]+) user reviews', html.unescape(row))
             dt = re.search(r'search_released[^>]*>\s*(.*?)\s*<', row, re.S)
-            if t and rv: cand[aid] = dict(name=html.unescape(t.group(1)), pct=int(rv.group(1)), n=int(rv.group(2).replace(',', '')), date=dt.group(1).strip() if dt else '')
+            if t and rv:
+                cand[aid] = dict(name=html.unescape(t.group(1)), pct=int(rv.group(1)), n=int(rv.group(2).replace(',', '')), date=dt.group(1).strip() if dt else '')
+                if cand[aid]['n'] >= 100: big += 1
+        # si legge la lista fino in fondo (sono circa 30 pagine): i giochi con molte recensioni sono sparsi ovunque
+if os.environ.get('SOLO_CANDIDATI') == '1':
+    print('candidati:', len(cand), '| Lost Castle 2:', cand.get(2445690)); sys.exit(0)
 
 def recent(d):
     for fmt in ('%d %b, %Y', '%b %d, %Y', '%d %B, %Y'):
@@ -87,7 +98,7 @@ for aid, c in sorted(cand.items(), key=lambda x: -x[1]['n']):
     if len(added) >= MAX_NEW: break
     sc = scartati.get(str(aid))
     if aid in known_ids or (sc and (today - datetime.date.fromisoformat(sc.get('d', '2000-01-01'))).days < 30): continue   # gli scartati si ricontrollano dopo un mese
-    ok_reviews = (c['pct'] >= 85 and c['n'] >= 500) or (recent(c['date']) and c['pct'] >= 90 and c['n'] >= 150)
+    ok_reviews = (c['pct'] >= 75 and c['n'] >= 1000) or (c['pct'] >= 80 and c['n'] >= 300) or (recent(c['date']) and c['pct'] >= 85 and c['n'] >= 100)
     if not ok_reviews: continue
     def skip(r): scartati[str(aid)] = dict(r=r + ': ' + c['name'], d=today.isoformat())
     if already(c['name']): skip('già in libreria'); continue
@@ -160,5 +171,5 @@ for aid, c in sorted(cand.items(), key=lambda x: -x[1]['n']):
     print('AGGIUNTO', name, c['pct'], c['n'], '| PEGI', pegi, '| età', age, v, '|', gi[1], catl, pl, '| tag:', ', '.join(top[:8]), flush=True)
 
 AUTO['version'] = int(datetime.datetime.now().strftime('%Y%m%d%H%M'))
-json.dump(AUTO, open(AUTO_P, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
+if not DRY: json.dump(AUTO, open(AUTO_P, 'w', encoding='utf-8'), ensure_ascii=False, separators=(',', ':'))
 print('nuovi giochi:', len(added), '| totale automatici:', len(AUTO['games']), '| candidati visti:', len(cand), '| scartati:', len(scartati))
