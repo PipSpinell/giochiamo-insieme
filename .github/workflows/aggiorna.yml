@@ -1,0 +1,42 @@
+# Robot di Giochiamo insieme (gratis su GitHub):
+# - ogni lunedì mattina aggiorna i prezzi (prices.json) leggendo DekuDeals, Steam e PriceCharting;
+# - quando si caricano nuovi pacchetti di foto (cartella pacchetti/), li scompatta in media/.
+# Il sito si aggiorna da solo dopo ogni modifica. Si può anche avviare a mano da "Actions" → "Aggiorna" → "Run workflow".
+name: Aggiorna
+on:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['pacchetti/**']
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: aggiorna
+  cancel-in-progress: false
+jobs:
+  aggiorna:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Foto (scompatta i pacchetti)
+        run: |
+          if ls pacchetti/*.zip >/dev/null 2>&1; then
+            for z in pacchetti/*.zip; do unzip -o -q "$z" -d .; done
+          fi
+      - name: Prezzi
+        run: python3 strumenti/aggiorna_prezzi.py .
+      - name: Salva
+        run: |
+          git config user.name "robot-prezzi"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A media prices.json
+          if git diff --cached --quiet; then echo "Niente da aggiornare"; exit 0; fi
+          git commit -m "Aggiornamento automatico: prezzi e foto"
+          git push
+      - name: Ripubblica il sito
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${{ github.repository }}/pages/builds" || true
